@@ -9,7 +9,7 @@ The project starts from one table, `data/idealista18_listings.parquet`: every 20
 
 ## Where ETL ends and modelling begins
 
-The ETL stops at one line: a step belongs to it only if it learns nothing from the data and doesn't depend on how the data will be split for a model. Whatever is fitted to the data (a median, a list of categories, a cluster) is fitted later, on the training data only, inside the model's pipeline; the table is the same for every user, and each model builds what it needs from it.
+The ETL stops at one line: a step belongs to it only if it learns nothing from the data and doesn't depend on how the data will be split for a model. Whatever is fitted to the data (a median, a list of categories, a cluster) is fitted later, on the training data only, inside the model's pipeline; the table is the same for every user, and each model builds what it needs from it. The same criterion, applied to every common preparation step: [Where data preparation ends and modelling begins](https://github.com/avidaldo/ai/blob/main/saa/data-preparation/where_preparation_ends.ipynb).
 
 Here is where the steps of this project fall:
 
