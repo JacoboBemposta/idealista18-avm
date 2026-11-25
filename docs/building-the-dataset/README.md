@@ -1,6 +1,6 @@
 # Building the dataset
 
-The project starts from one table, `data/idealista18_listings.parquet`: every 2018 sale listing of Madrid, Barcelona and Valencia in idealista18, one per row. These two notebooks build it from its public source, as an **ETL** (extract, transform, load) pipeline: a data-engineering task rather than a machine-learning one, and the step every machine-learning project depends on. The table is not stored in the repository: running the notebooks rebuilds it.
+The project starts from one table, `data/idealista18_listings.parquet`: every 2018 sale listing of Madrid, Barcelona and Valencia in idealista18, one per row. [`build_dataset.py`](../../build_dataset.py) builds it from its public source with one command, as an **ETL** (extract, transform, load) pipeline: a data-engineering task rather than a machine-learning one, and the step every machine-learning project depends on. These two notebooks run the same pipeline one step at a time, and explain and check each step; using the table doesn't require them. The table is not stored in the repository: running the script, or the notebooks, rebuilds it.
 
 | Notebook | What it covers |
 | --- | --- |
@@ -15,9 +15,9 @@ Here is where the steps of this project fall:
 
 | Step | Where it belongs | In this project |
 | --- | --- | --- |
-| Extraction, descriptive names, types, decoded columns, one table for three cities | ETL: the notebooks | `.rda` → DataFrame; the redundant `geometry` column dropped; nullable integers |
+| Extraction, descriptive names, types, decoded columns, one table for three cities | ETL: the pipeline | `.rda` → DataFrame; the redundant `geometry` column dropped; nullable integers |
 | Data-quality rules | ETL *reports* them and keeps every row; modelling decides what to do | prices rounded to €1,000; construction years after 2018. The report travels with the table; whether a construction year of 2291 becomes a missing value is a modelling decision |
-| Enrichment from fixed reference data | ETL: the notebooks | the neighbourhood of each listing; the distances to the centre and the metro, recomputed and checked against the source's |
+| Enrichment from fixed reference data | ETL: the pipeline | the neighbourhood of each listing; the distances to the centre and the metro, recomputed and checked against the source's |
 | Imputation, scaling, encoding | modelling, fitted on the training data | filling a missing construction year; one-hot encoding the neighbourhood |
 | Features fitted to the data | modelling, fitted on the training data | clusters of coordinates; a neighbourhood's average price |
 | Features built from *other listings' prices* | modelling, with the most care: the highest risk of leakage, and the time order matters too | the average price per m² of nearby listings |
@@ -25,28 +25,25 @@ Here is where the steps of this project fall:
 
 **The landmark distances show where harmonising stops.** Computing the distance from a listing to its city's main street is enrichment, so it is ETL. The three cities measure it to three different streets, so the table keeps three columns, `dist_castellana_km`, `dist_diagonal_km` and `dist_blasco_km`, each empty outside its city. Merging them into one "distance to the landmark" column would look like harmonising, but it would hide a difference of meaning. Whether a model trained in one city can use another city's landmark is a modelling question, not the ETL's.
 
-## Running the notebooks
+## Building the table
 
-Run them in order: the second one uses what the first one downloaded. With the dependencies of [`requirements.txt`](../../requirements.txt) installed, open each notebook and run all its cells, or run both from the root of the repository:
+With the dependencies of [`requirements.txt`](../../requirements.txt) installed, from the root of the repository:
 
 ```bash
-jupyter nbconvert --to notebook --execute --inplace docs/building-the-dataset/source_and_rda_format.ipynb docs/building-the-dataset/etl_pipeline.ipynb
+python build_dataset.py
 ```
 
-- **`jupyter nbconvert`** is Jupyter's tool for converting notebooks (to HTML, to a script, to another notebook).
-- `--to notebook` keeps the notebook format.
-- `--execute` runs every cell from top to bottom in a fresh kernel.
-- `--inplace` saves the result, outputs included, over the original file.
+The first run downloads the source files, about 14 MB, which can take a few minutes; later runs reuse them and take less than a minute. The script prints what each step of the pipeline does as it goes. With [uv](https://docs.astral.sh/uv/), `uv run --with-requirements requirements.txt python build_dataset.py` runs it without installing anything first, in a temporary environment with those packages.
 
-With [uv](https://docs.astral.sh/uv/), the same command runs without installing anything first: `uv run --with-requirements requirements.txt jupyter nbconvert …` creates a temporary environment with those packages for this one run.
+Everything is written under `data/`, which is not versioned: datasets are rebuilt, never committed.
 
-It takes about half a minute once the source files are downloaded. The notebooks write everything under `data/`, which is not versioned: datasets are rebuilt, never committed.
-
-| File | Written by |
+| File | What it holds |
 | --- | --- |
-| `data/raw_rda/*.rda` | the source files, downloaded by both notebooks and kept for the next run |
-| `data/idealista18_listings.parquet` | the ETL: the clean table, every listing of the three cities |
-| `data/idealista18_quality_report.csv` | the ETL: the rows that break each quality rule |
+| `data/raw_rda/*.rda` | the source files, downloaded once and kept for the next run |
+| `data/idealista18_listings.parquet` | the table: every listing of the three cities |
+| `data/idealista18_quality_report.csv` | how many rows break each quality rule |
+
+The notebooks run the same pipeline and write the same files, with the same table. To follow it step by step, open them in order and run all their cells: the second one uses what the first one downloaded.
 
 ## Licence
 
